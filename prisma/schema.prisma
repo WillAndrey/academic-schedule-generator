@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Course {
+  id          String @id @default(cuid())
+  name        String @unique
+  disciplines Discipline[]
+  uploads     Upload[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+}
+
+model Discipline {
+  id             String @id @default(cuid())
+  name           String
+  courseId       String
+  course         Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  entries        CalendarEntry[]
+  calendarImage  CalendarImage?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([name, courseId])
+  @@index([courseId])
+}
+
+model CalendarEntry {
+  id            String @id @default(cuid())
+  date          DateTime
+  description   String
+  eventType     String? // aula, prova, entrega, etc
+  disciplineId  String
+  discipline    Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([disciplineId])
+  @@index([date])
+}
+
+model CalendarImage {
+  id             String @id @default(cuid())
+  disciplineId   String @unique
+  discipline     Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+  filename       String
+  filepath       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Upload {
+  id          String @id @default(cuid())
+  filename    String
+  courseId    String
+  course      Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  status      String @default("pending") // pending, processing, completed, failed
+  errorMessage String?
+  createdAt   DateTime @default(now())
+
+  @@index([courseId])
+}
